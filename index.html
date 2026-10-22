@@ -1,0 +1,338 @@
+
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#10111a">
+<title>Bublik AI — Твой личный ИИ</title>
+<style>
+:root {
+  --bg: #10111a;
+  --panel: #171923;
+  --panel2: #202231;
+  --border: #303244;
+  --text: #f5f5fb;
+  --muted: #9b9db2;
+  --purple: #8b70ff;
+  --purple2: #6d50e8;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+}
+button, textarea { font: inherit; }
+button { cursor: pointer; }
+.app { display: flex; min-height: 100vh; }
+.sidebar {
+  width: 260px;
+  flex-shrink: 0;
+  background: #14151e;
+  border-right: 1px solid var(--border);
+  padding: 22px 15px;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+.brand { display: flex; align-items: center; gap: 11px; padding: 0 7px; }
+.logo {
+  width: 43px; height: 43px; border-radius: 14px;
+  background: linear-gradient(135deg, #a28bff, #6244d9);
+  display: grid; place-items: center; font-size: 24px;
+  box-shadow: 0 5px 25px #7755ff33;
+}
+.brand-name { font-size: 19px; font-weight: 800; letter-spacing: -.5px; }
+.brand-sub { font-size: 11px; color: var(--muted); margin-top: 3px; }
+.new-chat {
+  width: 100%; padding: 12px; border-radius: 11px;
+  border: 1px solid #4c407e; color: white;
+  background: #29233e; text-align: left;
+  transition: .2s;
+}
+.new-chat:hover { background: #382d57; }
+.side-label {
+  color: #777a91; font-size: 11px; text-transform: uppercase;
+  letter-spacing: 1.5px; padding: 0 8px;
+}
+.history { display: flex; flex-direction: column; gap: 5px; }
+.history-item {
+  padding: 10px; border-radius: 9px; color: var(--muted);
+  font-size: 13px; overflow: hidden; text-overflow: ellipsis;
+  white-space: nowrap; cursor: pointer;
+}
+.history-item:hover, .history-item.active {
+  color: white; background: var(--panel2);
+}
+.sidebar-bottom { margin-top: auto; }
+.status {
+  display: flex; gap: 9px; align-items: center;
+  border: 1px solid var(--border); border-radius: 11px; padding: 12px;
+}
+.dot { width: 8px; height: 8px; border-radius: 50%; background: #eab15c; }
+.status-title { font-size: 12px; font-weight: 600; }
+.status-sub { font-size: 11px; color: var(--muted); margin-top: 4px; }
+.main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.topbar {
+  height: 72px; display: flex; align-items: center; justify-content: space-between;
+  padding: 0 28px; border-bottom: 1px solid var(--border);
+}
+.top-title { font-weight: 650; font-size: 14px; }
+.model-tag {
+  font-size: 11px; color: #c4b8ff; background: #29233f;
+  border: 1px solid #413665; padding: 6px 10px; border-radius: 20px;
+}
+.content {
+  width: 100%; max-width: 900px; margin: 0 auto; padding: 35px 25px;
+  flex: 1; display: flex; flex-direction: column;
+}
+.welcome { margin: auto 0; padding: 30px 0 45px; }
+.welcome-icon {
+  width: 66px; height: 66px; border-radius: 22px;
+  display: grid; place-items: center; font-size: 36px;
+  background: linear-gradient(135deg, #292342, #30285b);
+  border: 1px solid #4b407b; margin-bottom: 24px;
+}
+h1 { font-size: clamp(29px, 4vw, 43px); letter-spacing: -1.5px; margin: 0 0 13px; }
+.gradient {
+  background: linear-gradient(90deg, #b4a2ff, #8d78ff, #70c6ff);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+.subtitle { color: var(--muted); line-height: 1.7; max-width: 520px; font-size: 14px; }
+.cards {
+  display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px; margin-top: 30px;
+}
+.suggestion {
+  padding: 17px; border: 1px solid var(--border); background: #171923;
+  border-radius: 13px; color: var(--text); text-align: left;
+  transition: .2s;
+}
+.suggestion:hover { border-color: #7660cb; background: #202033; transform: translateY(-2px); }
+.suggestion strong { display: block; font-size: 13px; margin-bottom: 7px; }
+.suggestion span { color: var(--muted); font-size: 12px; line-height: 1.5; }
+.messages { display: flex; flex-direction: column; gap: 22px; padding-bottom: 30px; }
+.message { display: flex; gap: 12px; align-items: flex-start; }
+.avatar {
+  width: 34px; height: 34px; border-radius: 11px; flex-shrink: 0;
+  display: grid; place-items: center; background: #29233f; font-size: 17px;
+}
+.message.user .avatar { background: #303246; }
+.message-body { font-size: 14px; line-height: 1.8; white-space: pre-wrap; overflow-wrap: anywhere; padding-top: 5px; }
+.message-name { color: var(--muted); font-size: 11px; margin-bottom: 5px; }
+.composer-wrap { position: sticky; bottom: 0; padding: 15px 0 0; background: var(--bg); }
+.composer {
+  border: 1px solid #414257; border-radius: 16px; background: #1a1c28;
+  padding: 12px; box-shadow: 0 10px 45px #0002;
+}
+.composer:focus-within { border-color: #8068ed; }
+textarea {
+  display: block; resize: none; width: 100%; max-height: 180px;
+  min-height: 42px; background: transparent; border: 0; outline: none;
+  color: white; padding: 7px; font-size: 14px; line-height: 1.6;
+}
+textarea::placeholder { color: #777a91; }
+.composer-bottom { display: flex; justify-content: space-between; align-items: center; padding: 4px 3px 0; }
+.hint { font-size: 11px; color: #777a91; }
+.send {
+  width: 38px; height: 38px; border: 0; border-radius: 11px;
+  color: white; background: var(--purple2); font-size: 19px;
+}
+.send:hover { background: var(--purple); }
+.send:disabled { opacity: .5; cursor: not-allowed; }
+.disclaimer { text-align: center; color: #777a91; font-size: 10px; padding: 13px 0 3px; }
+.mobile-menu { display: none; }
+@media (max-width: 700px) {
+  .sidebar { display: none; }
+  .topbar { height: 60px; padding: 0 16px; }
+  .content { padding: 25px 16px; }
+  .cards { grid-template-columns: 1fr; }
+  .welcome { padding: 25px 0; }
+  .mobile-menu { display: inline-block; background: none; border: 0; color: white; font-size: 22px; margin-right: 12px; }
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="logo">🧠</div>
+      <div>
+        <div class="brand-name">Bublik AI</div>
+        <div class="brand-sub">Твоя собственная нейросеть</div>
+      </div>
+    </div>
+    <button class="new-chat" id="newChat">＋ &nbsp; Новый чат</button>
+    <div class="side-label">Твои чаты</div>
+    <div class="history" id="history">
+      <div class="history-item active">✦ &nbsp; Новый разговор</div>
+    </div>
+    <div class="sidebar-bottom">
+      <div class="status">
+        <div class="dot"></div>
+        <div>
+          <div class="status-title">Демо-режим</div>
+          <div class="status-sub">ИИ ещё не подключён</div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <main class="main">
+    <header class="topbar">
+      <div style="display:flex;align-items:center">
+        <button class="mobile-menu" id="mobileMenu" aria-label="Меню">☰</button>
+        <span class="top-title">Личный ИИ-помощник</span>
+      </div>
+      <span class="model-tag">● Bublik AI · Preview</span>
+    </header>
+
+    <section class="content">
+      <div class="welcome" id="welcome">
+        <div class="welcome-icon">👑</div>
+        <h1>Привет, братан.<br><span class="gradient">Что создадим сегодня?</span></h1>
+        <p class="subtitle">Это начало нашего собственного ИИ-сервиса. Здесь появится твой помощник для программирования, идей, обучения и повседневных задач.</p>
+        <div class="cards">
+          <button class="suggestion" data-prompt="Помоги мне научиться программировать с нуля">
+            <strong>⌘ &nbsp; Научиться кодить</strong>
+            <span>Разберём программирование шаг за шагом</span>
+          </button>
+          <button class="suggestion" data-prompt="Придумай необычный проект, который мы можем создать">
+            <strong>✧ &nbsp; Придумать проект</strong>
+            <span>Найдём идею и воплотим её в жизнь</span>
+          </button>
+          <button class="suggestion" data-prompt="Объясни, как работает искусственный интеллект">
+            <strong>◈ &nbsp; Изучить ИИ</strong>
+            <span>Понятно разберёмся в нейросетях</span>
+          </button>
+          <button class="suggestion" data-prompt="Составь план создания собственного сайта">
+            <strong>▧ &nbsp; Создать сайт</strong>
+            <span>От первой страницы до публикации в сети</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="messages" id="messages" hidden></div>
+
+      <div class="composer-wrap">
+        <form class="composer" id="chatForm">
+          <textarea id="prompt" placeholder="Напиши сообщение Bublik AI..." rows="1" aria-label="Сообщение"></textarea>
+          <div class="composer-bottom">
+            <span class="hint">Enter — отправить · Shift + Enter — новая строка</span>
+            <button class="send" id="send" type="submit" aria-label="Отправить">↑</button>
+          </div>
+        </form>
+        <div class="disclaimer">Bublik AI · Наш собственный проект · Пока работает в демо-режиме</div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<script>
+const promptBox = document.getElementById('prompt');
+const messages = document.getElementById('messages');
+const welcome = document.getElementById('welcome');
+const form = document.getElementById('chatForm');
+const historyBox = document.getElementById('history');
+
+let chatNumber = 1;
+let chatTitles = ['Новый разговор'];
+
+function newChat() {
+  chatNumber++;
+  messages.replaceChildren();
+  messages.hidden = true;
+  welcome.hidden = false;
+  promptBox.value = '';
+  chatTitles.unshift('Новый разговор ' + chatNumber);
+  renderHistory();
+}
+
+function renderHistory() {
+  historyBox.replaceChildren();
+  chatTitles.slice(0, 12).forEach((title, i) => {
+    const item = document.createElement('div');
+    item.className = 'history-item' + (i === 0 ? ' active' : '');
+    item.textContent = '✦  ' + title;
+    item.addEventListener('click', () => {
+      messages.replaceChildren();
+      messages.hidden = true;
+      welcome.hidden = false;
+      [...historyBox.children].forEach(el => el.classList.remove('active'));
+      item.classList.add('active');
+    });
+    historyBox.appendChild(item);
+  });
+}
+
+function addMessage(role, text) {
+  const row = document.createElement('div');
+  row.className = 'message ' + role;
+  const avatar = document.createElement('div');
+  avatar.className = 'avatar';
+  avatar.textContent = role === 'user' ? '👤' : '👑';
+
+  const body = document.createElement('div');
+  body.className = 'message-body';
+  const name = document.createElement('div');
+  name.className = 'message-name';
+  name.textContent = role === 'user' ? 'Ты' : 'Bublik AI · Демо';
+  const content = document.createElement('div');
+  content.textContent = text;
+
+  body.append(name, content);
+  row.append(avatar, body);
+  messages.appendChild(row);
+  return row;
+}
+
+function sendMessage(text) {
+  text = text.trim();
+  if (!text) return;
+
+  welcome.hidden = true;
+  messages.hidden = false;
+  addMessage('user', text);
+
+  if (chatTitles[0] === 'Новый разговор' || chatTitles[0].startsWith('Новый разговор ')) {
+    chatTitles[0] = text.slice(0, 28);
+    renderHistory();
+  }
+
+  const reply = 'Братан, интерфейс работает! 🔥 Но настоящий ИИ мы ещё не подключили. Сейчас это демо-режим. Следующим шагом добавим сервер и языковую модель, чтобы я мог отвечать на твои вопросы по-настоящему.';
+  addMessage('assistant', reply);
+  promptBox.value = '';
+  promptBox.style.height = '42px';
+  messages.scrollTop = messages.scrollHeight;
+}
+
+form.addEventListener('submit', event => {
+  event.preventDefault();
+  sendMessage(promptBox.value);
+});
+
+promptBox.addEventListener('input', () => {
+  promptBox.style.height = '42px';
+  promptBox.style.height = Math.min(promptBox.scrollHeight, 180) + 'px';
+});
+
+promptBox.addEventListener('keydown', event => {
+  if (event.key === 'Enter' && !event.shiftKey) {
+    event.preventDefault();
+    form.requestSubmit();
+  }
+});
+
+document.getElementById('newChat').addEventListener('click', newChat);
+document.querySelectorAll('[data-prompt]').forEach(button => {
+  button.addEventListener('click', () => sendMessage(button.dataset.prompt));
+});
+document.getElementById('mobileMenu').addEventListener('click', () => {
+  alert('Историю чатов на мобильном устройстве добавим в следующем обновлении.');
+});
+</script>
+</body>
+</html>
