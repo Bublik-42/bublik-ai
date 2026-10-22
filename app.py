@@ -1,6 +1,5 @@
 
 import os
-
 import httpx
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -16,7 +15,7 @@ app.add_middleware(
         "http://127.0.0.1:8000",
     ],
     allow_credentials=False,
-    allow_methods=["POST", "GET"],
+    allow_methods=["GET", "POST"],
     allow_headers=["Content-Type"],
 )
 
@@ -38,17 +37,18 @@ async def chat(request: ChatRequest):
     if not GROQ_API_KEY:
         raise HTTPException(
             status_code=500,
-            detail="На сервере не настроен ключ ИИ.",
+            detail="На Render не настроен GROQ_API_KEY."
         )
 
     message = request.message.strip()
+
     if not message:
         raise HTTPException(status_code=400, detail="Напиши сообщение.")
 
     if len(message) > 8000:
         raise HTTPException(
             status_code=413,
-            detail="Сообщение слишком длинное. Максимум 8000 символов.",
+            detail="Сообщение слишком длинное. Максимум 8000 символов."
         )
 
     payload = {
@@ -59,8 +59,8 @@ async def chat(request: ChatRequest):
                 "content": (
                     "Ты Bublik AI — дружелюбный ИИ-помощник. "
                     "Отвечай по-русски, понятно и по делу. "
-                    "Иногда можешь шутить и обращаться к пользователю "
-                    "«братан». Не выдумывай факты, если не уверен — скажи."
+                    "Иногда шути и обращайся к пользователю «братан». "
+                    "Не выдумывай факты, если не уверен — скажи."
                 ),
             },
             {"role": "user", "content": message},
@@ -79,31 +79,55 @@ async def chat(request: ChatRequest):
                 },
                 json=payload,
             )
+
     except httpx.TimeoutException:
+        print("Groq error: request timed out")
         raise HTTPException(
             status_code=504,
-            detail="ИИ долго отвечает. Попробуй ещё раз.",
+            detail="ИИ слишком долго отвечает. Попробуй ещё раз."
         )
-    except httpx.RequestError:
+
+    except httpx.RequestError as error:
+        print(f"Groq connection error: {type(error).__name__}")
         raise HTTPException(
             status_code=502,
-            detail="Не удалось связаться с ИИ.",
+            detail="Сервер не смог связаться с сервисом ИИ."
         )
 
     if response.status_code >= 400:
-        # Не возвращаем пользователю секретный ключ или полный ответ провайдера.
-        raise HTTPException(
-            status_code=502,
-            detail="Сервис ИИ временно недоступен или достиг лимита запросов.",
+        try:
+            error_data = response.json().get("error", {})
+            error_type = error_data.get("type", "unknown")
+            error_code = error_data.get("code", "unknown")
+            error_message = error_data.get("message", "Нет описания")
+        except (ValueError, AttributeError):
+            error_type = "unknown"
+            error_code = "unknown"
+            error_message = response.text[:300]
+
+        # В логах не печатаем API-ключ.
+        print(
+            f"Groq API error: status={response.status_code}; "
+            f"type={error_type}; code={error_code}; "
+            f"message={str(error_message)[:500]}"
         )
 
-    data = response.json()
-    try:
-        answer = data["choices"][0]["message"]["content"]
-    except (KeyError, IndexError, TypeError):
         raise HTTPException(
             status_code=502,
-            detail="ИИ вернул неожиданный ответ.",
+            detail=(
+                f"Ошибка сервиса ИИ: HTTP {response.status_code}. "
+                f"{str(error_message)[:300]}"
+            ),
+        )
+
+    try:
+        data = response.json()
+        answer = data["choices"][0]["message"]["content"]
+    except (ValueError, KeyError, IndexError, TypeError):
+        print("Groq error: unexpected response format")
+        raise HTTPException(
+            status_code=502,
+            detail="ИИ вернул ответ в неизвестном формате."
         )
 
     return {"answer": answer}
